@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  googleId  String?  @unique
+  password  String?
+  name      String?
+  phone     String?
+  role      String   @default("USER") // "USER" or "ADMIN"
+  isVerified Boolean @default(false)
+  failedLoginAttempts Int @default(0)
+  lockedUntil DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  projects  ProjectSubmission[]
+  invoices  Invoice[]
+  adminAuditLogs AdminAuditLog[]
+}
+
+model OtpRequest {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model ProjectSubmission {
+  id               String   @id @default(cuid())
+  sessionId        String
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id])
+  servicesSelected String   // JSON string of selected options
+  totalEstimate    Int
+  status           String   @default("ABANDONED") // "ABANDONED", "DISCUSS", "SUBMITTED"
+  contactName      String?
+  contactEmail     String?
+  contactPhone     String?
+  message          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  invoice          Invoice?
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  sessionId  String
+  actionType String   // "PAGE_VISIT", "INTERACTION", "ESTIMATOR_UPDATE"
+  path       String
+  details    String   // JSON string
+  timestamp  DateTime @default(now())
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique // e.g. BWS-2026-0001
+  
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  
+  projectId     String   @unique
+  project       ProjectSubmission @relation(fields: [projectId], references: [id])
+  
+  amount        Int
+  status        String   @default("PAYMENT_PENDING") // DRAFT, ISSUED, PAYMENT_PENDING, PAYMENT_SUBMITTED, PAYMENT_ACCEPTED, PAID, REJECTED, CANCELLED
+  
+  dueDate       DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  payment       Payment?
+  receipt       Receipt?
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  
+  invoiceId     String   @unique
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+  
+  amount        Int
+  method        String   // UPI, BANK_TRANSFER
+  utrNumber     String
+  paymentDate   DateTime
+  screenshotUrl String?
+  notes         String?
+  status        String   @default("PENDING_VERIFICATION") // PENDING_VERIFICATION, ACCEPTED, REJECTED
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Receipt {
+  id            String   @id @default(cuid())
+  receiptNumber String   @unique // e.g. REC-2026-001
+  
+  invoiceId     String   @unique
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+  
+  amountReceived Int
+  method        String
+  utrNumber     String
+  paymentDate   DateTime
+  verifiedDate  DateTime
+  
+  createdAt     DateTime @default(now())
+}
+
+model AdminSettings {
+  id                 String   @id @default(cuid())
+  businessName       String   @default("Bro's WebStudio")
+  email              String   @default("broswebstudio@gmail.com")
+  phone              String   @default("8368079768")
+  address            String?
+  upiId              String?
+  upiQrUrl           String?
+  bankName           String?
+  accountHolder      String?
+  accountNumber      String?
+  ifsc               String?
+  invoicePrefix      String   @default("BWS")
+  receiptPrefix      String   @default("REC")
+  defaultDueDays     Int      @default(7)
+  currency           String   @default("INR")
+  updatedAt          DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id])
+  action     String   // e.g. "DELETE_PROJECT", "UPDATE_INVOICE"
+  details    String   // JSON string of what changed
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+}
