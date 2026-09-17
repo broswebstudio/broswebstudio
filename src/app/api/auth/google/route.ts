@@ -8,7 +8,9 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
-  const redirectUri = `${url.protocol}//${url.host}/api/auth/google/callback`;
+  const redirectUri = process.env.NODE_ENV === 'production' 
+    ? 'https://www.broswebstudio.in/api/auth/google/callback'
+    : `${url.protocol}//${url.host}/api/auth/google/callback`;
 
   const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   authUrl.searchParams.append('client_id', clientId);

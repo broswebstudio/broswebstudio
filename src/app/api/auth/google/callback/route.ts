@@ -20,7 +20,9 @@ export async function GET(req: Request) {
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = `${url.origin}/api/auth/google/callback`;
+    const redirectUri = process.env.NODE_ENV === 'production'
+      ? 'https://www.broswebstudio.in/api/auth/google/callback'
+      : `${url.origin}/api/auth/google/callback`;
 
     if (!clientId || !clientSecret) {
       return NextResponse.json({ error: 'Google OAuth is not configured.' }, { status: 500 });
