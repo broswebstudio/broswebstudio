@@ -44,7 +44,8 @@ export async function GET(req: Request) {
     if (!tokenResponse.ok) {
       const err = await tokenResponse.text();
       console.error('Google token error:', err);
-      return NextResponse.redirect(new URL(`/login?error=google_auth_failed`, req.url));
+      const safeErr = encodeURIComponent(err.substring(0, 100));
+      return NextResponse.redirect(new URL(`/login?error=google_auth_failed:${safeErr}`, req.url));
     }
 
     const tokenData = await tokenResponse.json();
@@ -56,7 +57,10 @@ export async function GET(req: Request) {
     });
 
     if (!profileResponse.ok) {
-      return NextResponse.redirect(new URL(`/login?error=google_profile_failed`, req.url));
+      const err = await profileResponse.text();
+      console.error('Google profile error:', err);
+      const safeErr = encodeURIComponent(err.substring(0, 100));
+      return NextResponse.redirect(new URL(`/login?error=google_profile_failed:${safeErr}`, req.url));
     }
 
     const profile = await profileResponse.json();
