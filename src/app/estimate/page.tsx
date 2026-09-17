@@ -6,6 +6,9 @@ import FaqAccordion from '../../components/FaqAccordion';
 export const metadata: Metadata = {
   title: 'Calculate Your Price | Bro\'s WebStudio',
   description: 'Use our live project estimator to see your exact price before you commit.',
+  alternates: {
+    canonical: '/estimate',
+  },
 };
 
 const PRICING_FAQS = [

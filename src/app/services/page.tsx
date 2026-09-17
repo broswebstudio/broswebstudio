@@ -3,6 +3,9 @@ import Link from 'next/link';
 export const metadata = {
   title: 'Our Services - Bro\'s WebStudio',
   description: 'Discover how Bro\'s WebStudio can help you grow your business, pass your college viva, and elevate your brand.',
+  alternates: {
+    canonical: '/services',
+  },
 };
 
 export default function ServicesPage() {

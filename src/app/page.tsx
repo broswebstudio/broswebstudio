@@ -1,7 +1,14 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
 import { PROBLEMS, FEATURES, STEPS, FAQS_HOME } from '../lib/data';
 import Estimator from '../components/Estimator';
 import FaqAccordion from '../components/FaqAccordion';
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
 
 export default function Home() {
   return (
@@ -10,8 +17,8 @@ export default function Home() {
         <div className="wrap">
           <div>
             <div className="eyebrow">bros-webstudio</div>
-            <h1>We build <span style={{ background: 'linear-gradient(135deg, var(--yellow), #ff7a00)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>websites</span>, projects &amp; designs that actually deliver.</h1>
-            <p className="lede">Website development, college major/minor projects, and graphic design — under one roof, priced upfront, delivered on time.</p>
+            <h1>We build <span style={{ background: 'linear-gradient(135deg, var(--yellow), #ff7a00)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>custom websites</span>, college projects &amp; graphic designs that actually deliver.</h1>
+            <p className="lede">Professional website development, college major/minor projects, and graphic design — under one roof, priced upfront, delivered on time.</p>
             <div className="hero-ctas">
               <Link href="/estimate" className="btn btn-yellow">Get My Free Estimate Now</Link>
               <a href="#how" className="btn btn-outline">See How We Work</a>

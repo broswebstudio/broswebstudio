@@ -14,15 +14,16 @@ const display = Outfit({ subsets: ["latin"], variable: '--display' });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: '--mono' });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://broswebstudio.com'), // Replace with your actual domain
+  metadataBase: new URL('https://www.broswebstudio.in'),
   title: "Bro's WebStudio — Premium Websites, College Projects & Graphic Design",
   description: "Website development, college major/minor projects, and graphic design — under one roof, priced upfront, delivered on time.",
   keywords: ["Web Development", "College Projects", "Graphic Design", "React", "Next.js", "WebStudio", "Custom Websites", "UI/UX Design", "College Viva Projects"],
   authors: [{ name: "Bro's WebStudio" }],
+  robots: "index, follow",
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://broswebstudio.com",
+    url: "https://www.broswebstudio.in",
     title: "Bro's WebStudio — Premium Websites, College Projects & Graphic Design",
     description: "Get custom websites, college tech projects, and stunning graphic designs with clear upfront pricing.",
     siteName: "Bro's WebStudio",
@@ -48,6 +49,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "Bro's WebStudio",
+              "url": "https://www.broswebstudio.in",
+              "logo": "https://www.broswebstudio.in/icon.png",
+              "sameAs": [],
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": "+91-8368079768",
+                "contactType": "customer service"
+              }
+            })
+          }}
+        />
+      </head>
       <body className={`${body.variable} ${display.variable} ${jetbrainsMono.variable}`}>
         <Suspense fallback={null}>
           <ActivityTracker />

@@ -5,6 +5,9 @@ import { SERVICES } from '@/lib/data';
 export const metadata: Metadata = {
   title: "Website Development for Business | Bro's WebStudio",
   description: 'Custom-designed websites for shop owners, founders, and consultants that bring in real enquiries.',
+  alternates: {
+    canonical: '/website-for-business',
+  },
 };
 
 export default function WebsiteForBusiness() {
