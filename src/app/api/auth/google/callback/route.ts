@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     const error = url.searchParams.get('error');
 
     if (error) {
-      return NextResponse.redirect(`${url.origin}/login?error=google_auth_failed`);
+      return NextResponse.redirect(new URL(`/login?error=google_auth_failed`, req.url));
     }
 
     if (!code) {
@@ -44,7 +44,7 @@ export async function GET(req: Request) {
     if (!tokenResponse.ok) {
       const err = await tokenResponse.text();
       console.error('Google token error:', err);
-      return NextResponse.redirect(`${url.origin}/login?error=google_auth_failed`);
+      return NextResponse.redirect(new URL(`/login?error=google_auth_failed`, req.url));
     }
 
     const tokenData = await tokenResponse.json();
@@ -56,14 +56,14 @@ export async function GET(req: Request) {
     });
 
     if (!profileResponse.ok) {
-      return NextResponse.redirect(`${url.origin}/login?error=google_profile_failed`);
+      return NextResponse.redirect(new URL(`/login?error=google_profile_failed`, req.url));
     }
 
     const profile = await profileResponse.json();
     const { id: googleId, email, name } = profile;
 
     if (!email) {
-      return NextResponse.redirect(`${url.origin}/login?error=no_email_provided`);
+      return NextResponse.redirect(new URL(`/login?error=no_email_provided`, req.url));
     }
 
     // 3. Check database for existing user
@@ -87,7 +87,7 @@ export async function GET(req: Request) {
         .sign(secret);
 
       // 5. Set Cookie and Redirect to dashboard (or admin based on role)
-      const res = NextResponse.redirect(`${url.origin}/${user.role === 'ADMIN' ? 'admin' : 'dashboard'}`);
+      const res = NextResponse.redirect(new URL(user.role === 'ADMIN' ? '/admin' : '/dashboard', req.url));
       
       res.cookies.set({
         name: 'bws_admin_token',
@@ -110,7 +110,7 @@ export async function GET(req: Request) {
         .setExpirationTime('1h') // Valid for 1 hour
         .sign(tempSecret);
 
-      const res = NextResponse.redirect(`${url.origin}/auth/complete`);
+      const res = NextResponse.redirect(new URL('/auth/complete', req.url));
       
       res.cookies.set({
         name: 'bws_pending_google',
@@ -127,6 +127,6 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Google Callback Error:', error);
     const url = new URL(req.url);
-    return NextResponse.redirect(`${url.origin}/login?error=internal_server_error`);
+    return NextResponse.redirect(new URL(`/login?error=internal_server_error`, req.url));
   }
 }

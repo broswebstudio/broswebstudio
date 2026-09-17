@@ -9,7 +9,7 @@ export default function GlobalPopup() {
 
   useEffect(() => {
     // Only prompt on public pages, not on auth pages
-    if (pathname === '/login' || pathname.startsWith('/admin') || pathname === '/profile') {
+    if (pathname === '/login' || pathname.startsWith('/admin') || pathname.startsWith('/profile') || pathname.startsWith('/dashboard') || pathname.startsWith('/auth/')) {
       return;
     }
 

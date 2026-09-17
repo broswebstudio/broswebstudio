@@ -8,9 +8,10 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
+  const urlError = searchParams.get('error');
   const [loginMode, setLoginMode] = useState<'login' | 'signup' | 'otp'>(initialMode);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(urlError ? urlError.replace(/_/g, ' ') : '');
   const [signupEmail, setSignupEmail] = useState('');
 
   // Safe returnUrl — only allow relative paths on same origin
