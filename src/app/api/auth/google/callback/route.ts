@@ -66,7 +66,7 @@ export async function GET(req: Request) {
       return NextResponse.redirect(`${url.origin}/login?error=no_email_provided`);
     }
 
-    // 3. Upsert user in database
+    // 3. Check database for existing user
     let user = await prisma.user.findUnique({ where: { email } });
 
     if (user) {
@@ -77,41 +77,53 @@ export async function GET(req: Request) {
           data: { googleId, isVerified: true }, // Auto verify since Google verified it
         });
       }
-    } else {
-      // Create new user
-      user = await prisma.user.create({
-        data: {
-          email,
-          name,
-          googleId,
-          isVerified: true,
-          // Since password is optional now, we don't need to provide it for OAuth users
-        },
+
+      // 4. Generate JWT
+      const secret = new TextEncoder().encode(JWT_SECRET);
+      const token = await new SignJWT({ id: user.id, email: user.email, role: user.role })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('7d')
+        .sign(secret);
+
+      // 5. Set Cookie and Redirect to dashboard (or admin based on role)
+      const res = NextResponse.redirect(`${url.origin}/${user.role === 'ADMIN' ? 'admin' : 'dashboard'}`);
+      
+      res.cookies.set({
+        name: 'bws_admin_token',
+        value: token,
+        httpOnly: true,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
       });
+
+      return res;
+    } else {
+      // New user: Do not create the user in the database yet.
+      // Generate temporary JWT for completing the account.
+      const tempSecret = new TextEncoder().encode(JWT_SECRET);
+      const pendingToken = await new SignJWT({ email, name, googleId, pendingRegistration: true })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('1h') // Valid for 1 hour
+        .sign(tempSecret);
+
+      const res = NextResponse.redirect(`${url.origin}/auth/complete`);
+      
+      res.cookies.set({
+        name: 'bws_pending_google',
+        value: pendingToken,
+        httpOnly: true,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60, // 1 hour
+      });
+
+      return res;
     }
-
-    // 4. Generate JWT
-    const secret = new TextEncoder().encode(JWT_SECRET);
-    const token = await new SignJWT({ id: user.id, email: user.email, role: user.role })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime('7d')
-      .sign(secret);
-
-    // 5. Set Cookie and Redirect to dashboard (or admin based on role)
-    const res = NextResponse.redirect(`${url.origin}/${user.role === 'ADMIN' ? 'admin' : 'profile'}`);
-    
-    res.cookies.set({
-      name: 'bws_admin_token',
-      value: token,
-      httpOnly: true,
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
-
-    return res;
   } catch (error) {
     console.error('Google Callback Error:', error);
     const url = new URL(req.url);

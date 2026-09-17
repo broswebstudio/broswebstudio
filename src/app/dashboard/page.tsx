@@ -8,12 +8,26 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'projects' | 'profile'>('projects');
   const [user, setUser] = useState<{name: string, email: string, phone: string} | null>(null);
   
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const saved = localStorage.getItem('user');
-    if (saved) {
-      setUser(JSON.parse(saved));
-    }
-  }, []);
+    fetch('/api/user/data')
+      .then((res) => {
+        if (!res.ok) throw new Error('Not logged in');
+        return res.json();
+      })
+      .then((data) => {
+        if (data.success && data.user) {
+          setUser(data.user);
+        } else {
+          router.push('/login');
+        }
+      })
+      .catch(() => {
+        router.push('/login');
+      })
+      .finally(() => setLoading(false));
+  }, [router]);
 
   // Mock data for Phase 1 UI
   const mockSubmissions = [

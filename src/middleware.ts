@@ -45,8 +45,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Protect /admin and /profile paths
-  if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/profile')) {
+  // Protect /admin, /profile, and /dashboard paths
+  if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/profile') || request.nextUrl.pathname.startsWith('/dashboard')) {
     const token = request.cookies.get('bws_admin_token')?.value;
 
     if (!token) {
@@ -76,5 +76,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/profile/:path*', '/api/submit', '/api/auth/login'],
+  matcher: ['/admin/:path*', '/profile/:path*', '/dashboard/:path*', '/api/submit', '/api/auth/login'],
 };
