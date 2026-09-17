@@ -124,9 +124,15 @@ export async function GET(req: Request) {
 
       return res;
     }
-  } catch (error) {
-    console.error('Google Callback Error:', error);
-    const url = new URL(req.url);
-    return NextResponse.redirect(new URL(`/login?error=internal_server_error`, req.url));
+  } catch (error: any) {
+    console.error('Google Callback Exception [SAFE LOG]:', {
+      name: error?.name,
+      message: error?.message,
+      stack: error?.stack,
+    });
+    
+    // Pass a safe version of the error message to the client
+    const safeError = error?.message ? encodeURIComponent(String(error.message).substring(0, 100)) : 'unknown_exception';
+    return NextResponse.redirect(new URL(`/login?error=internal_server_error:${safeError}`, req.url));
   }
 }
