@@ -35,6 +35,9 @@ export default function Header() {
 
   useEffect(() => {
     // Check if user is logged in
+    if (typeof window !== 'undefined' && localStorage.getItem('bws_logged_in') !== 'true') {
+      return;
+    }
     fetch('/api/user/data')
       .then(res => {
         if (res.ok) return res.json();
@@ -98,6 +101,7 @@ export default function Header() {
                     <button 
                       onClick={async () => {
                         setProfileMenuOpen(false);
+                        localStorage.removeItem('bws_logged_in');
                         await fetch('/api/auth/logout', { method: 'POST' });
                         router.push('/login');
                         window.location.reload();
@@ -169,6 +173,7 @@ export default function Header() {
               <button 
                 onClick={async () => {
                   setMobileMenuOpen(false);
+                  localStorage.removeItem('bws_logged_in');
                   await fetch('/api/auth/logout', { method: 'POST' });
                   router.push('/login');
                   window.location.reload();

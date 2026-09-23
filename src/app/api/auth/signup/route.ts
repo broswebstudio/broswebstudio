@@ -56,6 +56,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: 'OTP sent to email' }, { status: 201 });
   } catch (error: any) {
     console.error('Signup error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorMsg = error?.message ? String(error.message).substring(0, 200) : 'Internal server error';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

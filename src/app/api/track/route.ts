@@ -20,8 +20,9 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ success: true, logId: log.id });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Tracking error:", error);
-    return NextResponse.json({ error: "Failed to track activity" }, { status: 500 });
+    // Don't break the client or return generic 500 if JSON fails
+    return NextResponse.json({ error: "Failed to track activity", details: error?.message }, { status: 500 });
   }
 }

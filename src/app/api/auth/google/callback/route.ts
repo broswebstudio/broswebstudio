@@ -10,8 +10,14 @@ export async function GET(req: Request) {
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
 
+    const getBaseUrl = () => {
+      if (process.env.NODE_ENV === 'production') return 'https://www.broswebstudio.in';
+      return `${url.protocol}//${url.host}`;
+    };
+    const baseUrl = getBaseUrl();
+
     if (error) {
-      return NextResponse.redirect(new URL(`/login?error=google_auth_failed`, req.url));
+      return NextResponse.redirect(new URL(`/login?error=google_auth_failed`, baseUrl));
     }
 
     if (!code) {
@@ -20,9 +26,7 @@ export async function GET(req: Request) {
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = process.env.NODE_ENV === 'production'
-      ? 'https://www.broswebstudio.in/api/auth/google/callback'
-      : `${url.origin}/api/auth/google/callback`;
+    const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     if (!clientId || !clientSecret) {
       return NextResponse.json({ error: 'Google OAuth is not configured.' }, { status: 500 });
@@ -45,7 +49,7 @@ export async function GET(req: Request) {
       const err = await tokenResponse.text();
       console.error('Google token error:', err);
       const safeErr = encodeURIComponent(err.substring(0, 100));
-      return NextResponse.redirect(new URL(`/login?error=google_auth_failed:${safeErr}`, req.url));
+      return NextResponse.redirect(new URL(`/login?error=google_auth_failed:${safeErr}`, baseUrl));
     }
 
     const tokenData = await tokenResponse.json();
@@ -60,25 +64,36 @@ export async function GET(req: Request) {
       const err = await profileResponse.text();
       console.error('Google profile error:', err);
       const safeErr = encodeURIComponent(err.substring(0, 100));
-      return NextResponse.redirect(new URL(`/login?error=google_profile_failed:${safeErr}`, req.url));
+      return NextResponse.redirect(new URL(`/login?error=google_profile_failed:${safeErr}`, baseUrl));
     }
 
     const profile = await profileResponse.json();
     const { id: googleId, email, name } = profile;
 
     if (!email) {
-      return NextResponse.redirect(new URL(`/login?error=no_email_provided`, req.url));
+      return NextResponse.redirect(new URL(`/login?error=no_email_provided`, baseUrl));
     }
 
-    // 3. Check database for existing user
-    let user = await prisma.user.findUnique({ where: { email } });
+    // 3. Check database for existing user by googleId or email
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { googleId },
+          { email }
+        ]
+      }
+    });
 
     if (user) {
-      // User exists, just link googleId if it's not already linked
-      if (!user.googleId) {
+      // User exists, safely update/link
+      if (!user.googleId || user.email !== email || !user.isVerified) {
         user = await prisma.user.update({
-          where: { email },
-          data: { googleId, isVerified: true }, // Auto verify since Google verified it
+          where: { id: user.id },
+          data: { 
+            googleId, 
+            email, 
+            isVerified: true 
+          },
         });
       }
 
@@ -91,7 +106,7 @@ export async function GET(req: Request) {
         .sign(secret);
 
       // 5. Set Cookie and Redirect to dashboard (or admin based on role)
-      const res = NextResponse.redirect(new URL(user.role === 'ADMIN' ? '/admin' : '/dashboard', req.url));
+      const res = NextResponse.redirect(new URL(user.role === 'ADMIN' ? '/admin' : '/dashboard', baseUrl));
       
       res.cookies.set({
         name: 'bws_admin_token',
@@ -114,7 +129,7 @@ export async function GET(req: Request) {
         .setExpirationTime('1h') // Valid for 1 hour
         .sign(tempSecret);
 
-      const res = NextResponse.redirect(new URL('/auth/complete', req.url));
+      const res = NextResponse.redirect(new URL('/auth/complete', baseUrl));
       
       res.cookies.set({
         name: 'bws_pending_google',
@@ -137,6 +152,7 @@ export async function GET(req: Request) {
     
     // Pass a safe version of the error message to the client
     const safeError = error?.message ? encodeURIComponent(String(error.message).substring(0, 100)) : 'unknown_exception';
-    return NextResponse.redirect(new URL(`/login?error=internal_server_error:${safeError}`, req.url));
+    const fallbackBaseUrl = process.env.NODE_ENV === 'production' ? 'https://www.broswebstudio.in' : `${new URL(req.url).protocol}//${new URL(req.url).host}`;
+    return NextResponse.redirect(new URL(`/login?error=internal_server_error:${safeError}`, fallbackBaseUrl));
   }
 }

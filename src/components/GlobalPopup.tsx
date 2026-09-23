@@ -14,15 +14,17 @@ export default function GlobalPopup() {
     }
 
     const checkAuthAndPrompt = async () => {
+      if (typeof window !== 'undefined') {
+        if (localStorage.getItem('bws_welcome_dismissed') === 'true') return;
+        if (localStorage.getItem('bws_logged_in') === 'true') return;
+      }
+
       try {
         const res = await fetch('/api/user/data');
         if (!res.ok) {
-          // User is not logged in.
-          // We can pop this up after a slight delay so it's not aggressively instant
           setTimeout(() => setIsOpen(true), 1500);
         }
       } catch (err) {
-        // Assume not logged in on error
         setTimeout(() => setIsOpen(true), 1500);
       }
     };
@@ -42,7 +44,10 @@ export default function GlobalPopup() {
     }}>
       <div className="auth-card" style={{ maxWidth: '420px', width: '90%', margin: '0', position: 'relative', textAlign: 'center' }}>
         <button 
-          onClick={() => setIsOpen(false)}
+          onClick={() => {
+            setIsOpen(false);
+            if (typeof window !== 'undefined') localStorage.setItem('bws_welcome_dismissed', 'true');
+          }}
           style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--gray)' }}
         >
           &times;
@@ -57,6 +62,7 @@ export default function GlobalPopup() {
             className="btn btn-yellow btn-block" 
             onClick={() => {
               setIsOpen(false);
+              if (typeof window !== 'undefined') localStorage.setItem('bws_welcome_dismissed', 'true');
               router.push('/login?mode=signup');
             }}
           >
@@ -67,6 +73,7 @@ export default function GlobalPopup() {
             className="btn btn-outline btn-block" 
             onClick={() => {
               setIsOpen(false);
+              if (typeof window !== 'undefined') localStorage.setItem('bws_welcome_dismissed', 'true');
               router.push('/login?mode=login');
             }}
           >

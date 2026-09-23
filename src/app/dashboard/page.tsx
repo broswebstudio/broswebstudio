@@ -7,6 +7,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'projects' | 'profile'>('projects');
   const [user, setUser] = useState<{name: string, email: string, phone: string} | null>(null);
+  const [submissions, setSubmissions] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +20,7 @@ export default function DashboardPage() {
       .then((data) => {
         if (data.success && data.user) {
           setUser(data.user);
+          setSubmissions(data.submissions || []);
         } else {
           router.push('/login');
         }
@@ -29,23 +31,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
-  // Mock data for Phase 1 UI
-  const mockSubmissions = [
-    {
-      id: 'REQ-001',
-      service: 'Website for Business',
-      total: 12999,
-      status: 'In Progress',
-      date: '2023-10-15',
-    },
-    {
-      id: 'REQ-002',
-      service: 'Graphic Designing',
-      total: 4499,
-      status: 'Delivered',
-      date: '2023-09-02',
-    }
-  ];
+  // Real data used instead of mock data
 
   return (
     <div className="admin-shell" style={{ minHeight: '80vh', backgroundColor: 'var(--paper-warm)' }}>
@@ -57,8 +43,10 @@ export default function DashboardPage() {
               Track the status of everything you've submitted.
             </p>
           </div>
-          <button className="btn btn-outline" onClick={() => {
+          <button className="btn btn-outline" onClick={async () => {
             localStorage.removeItem('user');
+            localStorage.removeItem('bws_logged_in');
+            await fetch('/api/auth/logout', { method: 'POST' });
             router.push('/login');
           }}>
             Log out
@@ -95,10 +83,10 @@ export default function DashboardPage() {
           <div className="admin-panel" style={{ background: 'var(--paper)', padding: '40px', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow)' }}>
             <h3 style={{ margin: '0 0 8px 0' }}>Your submissions</h3>
             <p className="sub" style={{ color: 'var(--gray)', marginBottom: '32px' }}>
-              {mockSubmissions.length} project{mockSubmissions.length !== 1 ? 's' : ''} on file
+              {submissions.length} project{submissions.length !== 1 ? 's' : ''} on file
             </p>
             
-            {mockSubmissions.length === 0 ? (
+            {submissions.length === 0 ? (
               <div className="empty-state" style={{ textAlign: 'center', padding: '60px 0' }}>
                 <p style={{ color: 'var(--gray)', marginBottom: '24px' }}>
                   No submissions yet — build an estimate on the homepage to get started.
@@ -120,15 +108,15 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {mockSubmissions.map((s, i) => (
+                    {submissions.map((s, i) => (
                       <tr key={i} style={{ borderBottom: '1px solid var(--gray-line)' }}>
-                        <td style={{ padding: '16px 8px', fontWeight: 500, fontFamily: 'var(--mono)' }}>{s.id}</td>
-                        <td style={{ padding: '16px 8px' }}>{s.service}</td>
-                        <td style={{ padding: '16px 8px', fontWeight: 600 }}>₹{s.total.toLocaleString('en-IN')}</td>
+                        <td style={{ padding: '16px 8px', fontWeight: 500, fontFamily: 'var(--mono)' }}>{s.id || `REQ-00${i+1}`}</td>
+                        <td style={{ padding: '16px 8px' }}>{s.servicesSelected ? JSON.parse(s.servicesSelected).category : 'Project'}</td>
+                        <td style={{ padding: '16px 8px', fontWeight: 600 }}>₹{(s.totalEstimate || 0).toLocaleString('en-IN')}</td>
                         <td style={{ padding: '16px 8px' }}>
                           <span
                             className={`pill ${
-                              s.status === 'New' ? 'event' : s.status === 'Delivered' ? 'done' : 'active'
+                              s.status === 'New' || s.status === 'SUBMITTED' ? 'event' : s.status === 'Delivered' ? 'done' : 'active'
                             }`}
                             style={{
                               display: 'inline-block',
@@ -143,7 +131,7 @@ export default function DashboardPage() {
                             {s.status}
                           </span>
                         </td>
-                        <td style={{ padding: '16px 8px', color: 'var(--gray)' }}>{s.date}</td>
+                        <td style={{ padding: '16px 8px', color: 'var(--gray)' }}>{new Date(s.createdAt).toLocaleDateString()}</td>
                       </tr>
                     ))}
                   </tbody>

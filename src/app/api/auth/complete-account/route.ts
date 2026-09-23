@@ -24,19 +24,43 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already got created in another session to prevent duplicates
-    let user = await prisma.user.findUnique({ where: { email: payload.email as string } });
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: payload.email as string },
+          { googleId: payload.googleId as string }
+        ]
+      }
+    });
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: payload.email as string,
-          name: payload.name as string,
-          googleId: payload.googleId as string,
-          phone: phone,
-          isVerified: true,
-          role: 'USER',
-        },
-      });
+      try {
+        user = await prisma.user.create({
+          data: {
+            email: payload.email as string,
+            name: payload.name as string,
+            googleId: payload.googleId as string,
+            phone: phone,
+            isVerified: true,
+            role: 'USER',
+          },
+        });
+      } catch (error: any) {
+        if (error.code === 'P2002') {
+          // A concurrent request just created this user. Let's fetch them.
+          user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { email: payload.email as string },
+                { googleId: payload.googleId as string }
+              ]
+            }
+          });
+          if (!user) throw error;
+        } else {
+          throw error;
+        }
+      }
     }
 
     // Generate real JWT

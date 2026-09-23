@@ -74,6 +74,7 @@ function LoginForm() {
         });
 
         if (res.ok) {
+          localStorage.setItem('bws_logged_in', 'true');
           const data = await res.json();
           if (data.role === 'ADMIN') {
             router.push('/admin');
